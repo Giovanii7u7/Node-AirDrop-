@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitor de Red</title>
+
+    <!-- Responsive iOS y dispositivos móviles -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0, user-scalable=yes, minimum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0b1d26" id="themeColor">
+    <meta name="description" content="Monitor de Red - Comparte archivos en tu red local">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Monitor de Red">
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Socket.io -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+</head>
+
+<body>
+
+<header class="top-bar">
+
+    <button class="menu-btn" id="menuBtn" aria-label="Menú"> ☰ </button>
+
+    <!-- SWITCH iOS -->
+    <div class="theme-switch">
+        <img src="assets/icons/sun-black-symboi_icon-icons.com_64259.svg" class="icon" alt="Modo claro">
+
+        <label class="switch">
+            <input type="checkbox" id="themeToggle" aria-label="Cambiar tema">
+            <span class="slider"></span>
+        </label>
+
+        <img src="assets/icons/sunoutline_80681.svg" class="icon" alt="Modo oscuro">
+    </div>
+</header>
+
+<!-- MENU LATERAL -->
+<nav id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+        <h2>Menu</h2>
+        <button class="close-menu" id="closeMenuBtn">&times;</button>
+    </div>
+    
+    <ul class="menu-list">
+        <li class="menu-item">
+            <a href="#" class="menu-link settings-link">
+                <span class="menu-icon">⚙️</span>
+                <span class="menu-text">Ajustes</span>
+            </a>
+        </li>
+        <li class="menu-item menu-separator">
+            <a href="#" class="menu-link about-link" id="aboutLink">
+                <span class="menu-icon">ℹ️</span>
+                <span class="menu-text">Acerca de</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- OVERLAY DEL MENU -->
+<div id="menuOverlay" class="menu-overlay"></div>
+
+<main>
+    <div class="radar">
+        <div class="center"></div>
+
+        <!-- Órbitas -->
+        <div class="orbit orbit1"></div>
+        <div class="orbit orbit2"></div>
+        <div class="orbit orbit3"></div>
+        <div class="orbit orbit4"></div>
+        <div class="orbit orbit5"></div>
+        
+
+        <!-- Nodos - Iconos de Perfiles Activos -->
+        <div id="usersContainer"></div>
+        
+        <!-- Icono de Perfil -->
+        <div class="profile-container">
+            <button class="profile-icon" id="profileBtn" aria-label="Editar perfil">
+                <img src="assets/icons/profile.svg" alt="Perfil" id="profileImg">
+            </button>
+            <span class="profile-name" id="profileNameLabel">Mi Perfil</span>
+        </div>
+    </div>
+    
+    <!-- Modal de Envio de Archivos -->
+    <div id="fileModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeFileModal">&times;</span>
+            <h2>Enviar archivo a <span id="userName">Usuario</span></h2>
+            <form id="fileForm">
+                <div class="form-group">
+                    <label for="fileInput">Seleccionar archivo:</label>
+                    <div class="file-drop-area" id="fileDropArea">
+                        <input type="file" id="fileInput" required style="display: none;">
+                        <div class="drop-area-content">
+                            <div class="drop-icon">📁</div>
+                            <p class="drop-text">Arrastra archivo aquí o haz clic</p>
+                            <p class="drop-subtext">Máximo 100MB</p>
+                        </div>
+                    </div>
+                    <div class="file-selected" id="fileSelectedInfo" style="display: none;">
+                        <p>📄 <span id="selectedFileName">archivo.txt</span></p>
+                    </div>
+
+                    <div class="progress-container" id="uploadProgressContainer" style="display:none; margin-top:10px;">
+                        <div class="progress-track">
+                            <div class="progress-bar" id="uploadProgress" style="width:0%">0%</div>
+                        </div>
+                        <small>Cargando archivo...</small>
+                    </div>
+
+                    <div class="progress-container" id="sendProgressContainer" style="display:none; margin-top:10px;">
+                        <div class="progress-track">
+                            <div class="progress-bar" id="sendProgress" style="width:0%">0%</div>
+                        </div>
+                        <small>Enviando al servidor...</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="fileMessage">Mensaje (opcional):</label>
+                    <textarea id="fileMessage" placeholder="Escriba un mensaje..." rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn-save">Enviar</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de Edicion de Perfil -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <h2>Editar Perfil</h2>
+            <form id="profileForm">
+                <!-- Foto de Perfil -->
+                <div class="profile-photo-section">
+                    <div id="profilePhotoPreview" class="profile-photo">👤</div>
+                    <div class="photo-options">
+                        <button type="button" id="uploadPhotoBtn" class="btn-photo-option">📤 Subir Foto</button>
+                        <button type="button" id="selectAvatarBtn" class="btn-photo-option">🎭 Avatars</button>
+                    </div>
+                    <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                </div>
+                
+                <!-- Selector de Avatars -->
+                <div id="avatarSelector" class="avatar-selector" style="display:none;">
+                    <p>Selecciona un avatar:</p>
+                    <div class="avatars-grid">
+                        <button type="button" class="avatar-btn" data-emoji="🐶">🐶</button>
+                        <button type="button" class="avatar-btn" data-emoji="🐱">🐱</button>
+                        <button type="button" class="avatar-btn" data-emoji="🐭">🐭</button>
+                        <button type="button" class="avatar-btn" data-emoji="🐹">🐹</button>
+                        <button type="button" class="avatar-btn" data-emoji="🐰">🐰</button>
+                        <button type="button" class="avatar-btn" data-emoji="🦊">🦊</button>
+                        <button type="button" class="avatar-btn" data-emoji="🐻">🐻</button>
+                        <button type="button" class="avatar-btn" data-emoji="🐼">🐼</button>
+                        <button type="button" class="avatar-btn" data-emoji="🐨">🐨</button>
+                        <button type="button" class="avatar-btn" data-emoji="🐯">🐯</button>
+                        <button type="button" class="avatar-btn" data-emoji="🦁">🦁</button>
+                        <button type="button" class="avatar-btn" data-emoji="🐮">🐮</button>
+                    </div>
+                </div>
+                
+                <!-- Nombre -->
+                <div class="form-group">
+                    <label for="profileName">Nombre:</label>
+                    <input type="text" id="profileName" placeholder="Ingrese su nombre">
+                </div>
+                
+                <button type="submit" class="btn-save">Guardar</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de Notificacion de Archivo Entrante -->
+    <div id="incomingFileModal" class="modal">
+        <div class="modal-content">
+            <h2>Archivo Entrante</h2>
+            <div class="incoming-file-info">
+                <p><strong id="senderName">Usuario</strong> te está enviando un archivo:</p>
+                <p class="file-name" id="incomingFileName">archivo.txt</p>
+                <p class="file-message" id="incomingFileMessage"></p>
+            </div>
+
+            <div class="progress-container" id="receiveProgressContainer" style="display:none; margin-top:10px;">
+                <div class="progress-track">
+                    <div class="progress-bar" id="receiveProgress" style="width:0%">0%</div>
+                </div>
+                <small>Recibiendo archivo...</small>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-accept" id="acceptFileBtn">Aceptar</button>
+                <button class="btn-reject" id="rejectFileBtn">Rechazar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Historial de Archivos Recibidos -->
+    <div id="filesPanel" class="files-panel">
+        <div class="files-panel-header">
+            <h3>⬇️ Archivos Recibidos</h3>
+            <button id="closeFilesPanel" class="close-panel">&times;</button>
+        </div>
+        <div class="files-list" id="filesList">
+            <p class="empty-message">No hay archivos recibidos</p>
+        </div>
+    </div>
+    
+    <!-- Botón para abrir panel de archivos -->
+    <button id="filesButton" class="files-button" title="Archivos recibidos">⬇️</button>
+    
+    <!-- Modal de Ajustes -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeSettingsModal">&times;</span>
+            <h2>⚙️ Ajustes</h2>
+            
+            <!-- Notificaciones -->
+            <div class="settings-section">
+                <h3>🔔 Notificaciones</h3>
+                <div class="settings-item">
+                    <label>
+                        <input type="checkbox" id="soundEnabled" checked>
+                        <span>Sonido al recibir archivo</span>
+                    </label>
+                </div>
+                <div class="settings-item">
+                    <label>
+                        <input type="checkbox" id="desktopNotifications">
+                        <span>Notificaciones del navegador</span>
+                    </label>
+                </div>
+                <div class="settings-item">
+                    <label>
+                        <input type="checkbox" id="autoDownload" checked>
+                        <span>Descargar archivos automáticamente</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Almacenamiento -->
+            <div class="settings-section">
+                <h3>💾 Almacenamiento</h3>
+                <div class="settings-item">
+                    <p>Archivos guardados: <strong id="filesCount">0</strong></p>
+                    <p>Espacio usado: <strong id="storageUsed">0 KB</strong></p>
+                </div>
+                <button id="clearStorageBtn" class="btn-danger" style="width: 100%; margin-top: 10px;">🗑️ Limpiar Historial</button>
+            </div>
+            
+            <!-- Información -->
+            <div class="settings-section">
+                <h3>ℹ️ Información</h3>
+                <div class="settings-item">
+                    <p><strong>IP Local:</strong> <span id="localIp">Obteniendo...</span></p>
+                    <p><strong>Puerto:</strong> <span id="portInfo">3000</span></p>
+                    <p><strong>ID Sesión:</strong> <span id="sessionId">-</span></p>
+                    <p><strong>Versión:</strong> v1.0.0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Acerca de -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeAboutModal">&times;</span>
+            <h2>ℹ️ Acerca de</h2>
+            <div class="about-info">
+                <p><strong>Creado por:</strong> Grupo 908</p>
+                <p><strong>Institución:</strong> Universidad del Istmo Campus Ixtepec</p>
+                <p><strong>Fecha:</strong> 2026</p>
+                <p><strong>Versión:</strong> 1</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="script.js"></script>
+
+</body>
+</html>
