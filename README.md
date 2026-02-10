@@ -27,7 +27,4 @@ El servidor por defecto escucha en el puerto definido en `server.js` (revisa ese
 
 ## Notas
 - Si existe un script `start` en `package.json`, también puedes usar `npm start`.
-- Si al hacer `git push` necesitas credenciales, configúralas en tu entorno (GitHub CLI, token o credenciales remotas).
-
-## Contacto
-Si necesitas que yo haga el push por ti, asegúrate de que el repositorio remoto exista y que hayas otorgado acceso (o comparte instrucciones para autenticarme). 
+- Si al hacer `git push` necesitas credenciales, configúralas en tu entorno (GitHub CLI, token o credenciales remotas). 
